@@ -1,14 +1,31 @@
 package org.prettyprint;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import javax.lang.model.type.PrimitiveType;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class PrettyPrinter {
+
+    private static final List<Executable<Object>> execList = List.of(
+            (Object o, int... pad) ->
+                    o instanceof Map<?, ?> ?
+                            iterWithMap((Map<?, ?>) o, pad) : "null",
+
+            (Object o, int... pad) ->
+                    o instanceof Object[] ?
+                            iterWithList((Object[]) o, pad) : "null",
+
+            (Object o, int... pad) ->
+                    o instanceof List<?> ?
+                            iterWithList(((List<?>) o).toArray(), pad) : "null",
+
+            (Object o, int... pad) ->
+                o instanceof CharSequence || o instanceof Number ?
+                        " ".repeat(check(pad)) + o : "null"
+    );
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -23,18 +40,13 @@ public class PrettyPrinter {
     }
 
     public static String pprint(Object o, int... pad) {
-        if (o instanceof List<?>) {
-            return iterWithList(((List<?>) o).toArray(), pad);
-        } else if (o instanceof Map<?, ?>) {
-            return iterWithMap((Map<?, ?>) o, pad);
-        } else if (o instanceof Object[]) {
-            return iterWithList((Object[]) o, pad);
-        } else if (o instanceof CharSequence || o instanceof Number) {
-            int p = check(pad);
-            return " ".repeat(p) + o;
-        } else {
-            return iterWithObject(o, pad);
+
+        for (Executable<Object> e : execList) {
+           if (!Objects.equals(e.execute(o, pad), "null")) {
+               return e.execute(o, pad);
+           }
         }
+        return iterWithObject(o, pad);
     }
 
     private static String iterWithList(Object[] a, int... p) {
@@ -71,7 +83,7 @@ public class PrettyPrinter {
             sb.append("\n").append(" ".repeat(pad + 1));
             sb.append(o).append(" ".repeat(max - o.toString().length())).append(" :\n");
 
-            sb.append(pprint(m.get(o), pad + max+3));
+            sb.append(pprint(m.get(o), pad + max + 3));
         }
         sb.append("\n").append(" ".repeat(pad)).append("}");
 

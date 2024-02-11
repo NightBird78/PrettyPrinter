@@ -1,8 +1,5 @@
 package org.prettyprint;
 
-import com.sun.jdi.PrimitiveType;
-import com.sun.jdi.PrimitiveValue;
-
 import java.util.*;
 
 public class Main {
