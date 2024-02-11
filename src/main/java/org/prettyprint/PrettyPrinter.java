@@ -92,6 +92,9 @@ public class PrettyPrinter {
 
     private static String iterWithObject(Object o, int... p) {
 
+        if (o == null) {
+            return "Null";
+        }
 
         Map<String, Object> json = objectMapper.convertValue(o, new TypeReference<>() {
         });
